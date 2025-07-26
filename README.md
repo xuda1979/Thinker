@@ -1,6 +1,6 @@
 # IMO 2025 Problem Solver
 
-A parallel AI agent system for solving International Mathematical Olympiad (IMO) problems using Google's Gemini API.
+A parallel AI agent system for solving International Mathematical Olympiad (IMO) problems using the DeepSeek-R1 model via Infini AI. You must obtain an API key from Infini AI to run the agents.
 
 ## Overview
 
@@ -11,7 +11,7 @@ This project consists of two main components:
 ## Prerequisites
 
 1. **Python 3.7+** installed on your system
-2. **Google Gemini API key** - Get one from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. **Infini AI API key** - Register for one at [Infini AI](https://cloud.infini-ai.com)
 3. **Required Python packages**:
    ```bash
    pip install requests
@@ -22,8 +22,9 @@ This project consists of two main components:
 1. **Clone or download the project files**
 2. **Set up your API key**:
    - Create a `.env` file in the project directory
-   - Add your API key: `GOOGLE_API_KEY=your_api_key_here`
-   - Or set it as an environment variable: `export GOOGLE_API_KEY=your_api_key_here`
+   - Add your API key: `INFINI_API_KEY=your_api_key_here`
+   - Or set it as an environment variable: `export INFINI_API_KEY=your_api_key_here`
+   - Requests are sent to `https://cloud.infini-ai.com/maas/v1/chat/completions`
 
 ## Usage
 
@@ -103,7 +104,7 @@ See the `problems` folder.
 The system looks for the phrase "Found a correct solution in run" to identify successful solutions.
 
 ### Agent Behavior
-- Agents use Google's Gemini 2.5 Pro model
+- Agents use the DeepSeek-R1 model via Infini AI
 - Each agent follows a structured approach with multiple attempts
 - Solutions are verified for completeness and correctness
 - Agents can provide partial solutions if complete solutions aren't found
@@ -113,14 +114,14 @@ The system looks for the phrase "Found a correct solution in run" to identify su
 1. **Problem Formatting**: Ensure your problem file is clear and well-formatted
 2. **Parallel Execution**: Use more agents for harder problems (10-20 agents recommended)
 3. **Timeout Settings**: Set reasonable timeouts (you may set no timeout)
-4. **API Limits**: Be aware of Google API rate limits and costs
+4. **API Limits**: Be aware of Infini AI API rate limits and costs
 5. **Log Analysis**: Check individual agent logs for detailed reasoning
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **API Key Error**: Ensure your Google API key is properly set
+1. **API Key Error**: Ensure your Infini AI API key is properly set
 2. **Timeout Issues**: Increase timeout or reduce number of agents
 3. **Memory Issues**: Reduce max-workers if running out of memory
 4. **No Solutions Found**: Try running more agents or check problem clarity
