@@ -32,11 +32,10 @@ import argparse
 import logging
 
 # --- CONFIGURATION ---
-# The model to use. "gemini-1.5-flash" is fast and capable.
-#MODEL_NAME = "gemini-1.5-flash-latest" 
-MODEL_NAME = "gemini-2.5-pro" 
-# Use the Generative Language API endpoint, which is simpler for API key auth
-API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
+# The model to use via Infini AI
+MODEL_NAME = "deepseek-r1"
+# Infini AI chat completion endpoint
+API_URL = "https://cloud.infini-ai.com/maas/v1/chat/completions"
 
 # Global variables for logging
 _log_file = None
@@ -183,15 +182,12 @@ Your task is to act as an IMO grader. Now, generate the **summary** and the **st
 """
 
 def get_api_key():
-    """
-    Retrieves the Google API key from environment variables.
-    Exits if the key is not found.
-    """
+    """Retrieve the Infini AI API key from the environment."""
 
-    api_key = os.getenv("GOOGLE_API_KEY")
+    api_key = os.getenv("INFINI_API_KEY")
     if not api_key:
-        print("Error: GOOGLE_API_KEY environment variable not set.")
-        print("Please set the variable, e.g., 'export GOOGLE_API_KEY=\"your_api_key\"'")
+        print("Error: INFINI_API_KEY environment variable not set.")
+        print("Please set the variable, e.g., 'export INFINI_API_KEY=\"your_api_key\"'")
         sys.exit(1)
     return api_key
 
@@ -211,69 +207,52 @@ def read_file_content(filepath):
         sys.exit(1)
 
 def build_request_payload(system_prompt, question_prompt, other_prompts=None):
-    """
-    Builds the JSON payload for the Gemini API request, using the
-    recommended multi-turn format to include a system prompt.
-    """
-    payload = {
-        "systemInstruction": {
-            "role": "system",
-            "parts": [
-            {
-                "text": system_prompt 
-            }
-            ]
-        },
-       "contents": [
-        {
-          "role": "user",
-          "parts": [{"text": question_prompt}]
-        }
-      ],
-      "generationConfig": {
-        "temperature": 0.1,
-        "topP": 1.0,
-        "thinkingConfig": { "thinkingBudget": 32768} 
-      },
-    }
+    """Build the request payload for the DeepSeek API."""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": question_prompt},
+    ]
 
     if other_prompts:
         for prompt in other_prompts:
-            payload["contents"].append({
-                "role": "user",
-                "parts": [{"text": prompt}]
-            })
+            messages.append({"role": "user", "content": prompt})
+
+    payload = {
+        "model": MODEL_NAME,
+        "messages": messages,
+        "stream": False,
+    }
 
     return payload
 
 def send_api_request(api_key, payload):
-    """
-    Sends the request to the Gemini API and returns the response.
-    """
+    """Send the request to the DeepSeek API and return the JSON response."""
+
     headers = {
         "Content-Type": "application/json",
-        "X-goog-api-key": api_key # API key now in header!
+        "Authorization": f"Bearer {api_key}",
     }
-    
-    #print("Sending request to Gemini API...")
+
     try:
-        response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
-        response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
+        response = requests.post(API_URL, headers=headers, json=payload)
+        response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         print(f"Error during API request: {e}")
-        if response.status_code == 400:
+        resp = getattr(e, 'response', None)
+        if resp is not None and resp.status_code == 400:
             print(f"Possible reason for 400: Model '{MODEL_NAME}' might not be available or URL is incorrect for your setup.")
-            print(f"Raw API Response (if available): {response.text}")
+            print(f"Raw API Response (if available): {resp.text}")
         sys.exit(1)
 
 def extract_text_from_response(response_data):
     """
-    Extracts the generated text from the API response JSON.
-    Handles potential errors if the response format is unexpected.
+    Extract the generated text from the API response JSON.
+    Adapted for the DeepSeek format.
     """
     try:
-        return response_data['candidates'][0]['content']['parts'][0]['text']
+        return response_data['choices'][0]['message']['content']
     except (KeyError, IndexError, TypeError) as e:
         print("Error: Could not extract text from the API response.")
         print(f"Reason: {e}")
